@@ -1,13 +1,24 @@
+import { useContext } from "react";
 import { AiOutlineMenu } from "react-icons/ai";
 import { CiBellOn, CiSearch } from "react-icons/ci";
 import { FaMicrophone } from "react-icons/fa";
 import { GoPlus } from "react-icons/go";
+import { SidebarContext } from "../context/SidebarContext";
 
 export default function Navbar() {
+  const { setIsSidebarOpen } = useContext(SidebarContext);
+
   return (
-    <div className="w-full  px-4 flex items-center justify-between">
+    <div className="w-full fixed top-0 left-0 bg-white px-5 flex z-100 items-center justify-between">
       <div className="flex items-center gap-3">
-        <AiOutlineMenu className="cursor-pointer text-xl" />
+        <div className="hover:bg-black/5 transition duration-200 rounded-full p-2">
+          <AiOutlineMenu
+            className="cursor-pointer text-xl"
+            onClick={() => {
+              setIsSidebarOpen((prev) => (prev ? false : true));
+            }}
+          />
+        </div>
         <div className="flex items-center text-xl font-bold ">
           <img src="Youtube-logo.png" alt="logo" className="w-15" />
           <h1 className="font-logo text-2xl text-black/80">Youtube</h1>
@@ -31,7 +42,7 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="bg-black/10 flex items-center gap-1 px-4 cursor-pointer py-2.5 font-robo rounded-full">
+        <div className="bg-black/10 hover:bg-black/20 transition duration-150 flex items-center gap-1 px-4 cursor-pointer py-2.5 font-robo rounded-full">
           <GoPlus className="text-2xl font-light " />
           <p>Create</p>
         </div>
