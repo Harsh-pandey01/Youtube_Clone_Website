@@ -8,24 +8,69 @@ import { CgProfile } from "react-icons/cg";
 import { SidebarContext } from "../context/SidebarContext";
 import { fetchData } from "../../utils/RapidApi";
 import Thumbnail from "../components/Thumbnell";
-import data from "../data";
 import categories from "../Categories";
 import CategoryScroll from "../Categories";
 import { motion } from "motion/react";
+import { div } from "motion/react-client";
 export default function Home() {
   const { isSidebarOpen } = useContext(SidebarContext);
-  const [homePageData, setHomePageData] = useState([...data]);
+  const [homePageData, setHomePageData] = useState([]);
   const fetchHomepageData = async () => {
-    const { videos } = await fetchData(
-      "search/?query=New%20lee&lang=en&order_by=this_month&country=us"
+    const data = await fetchData(
+      "search?part=snippet&q=New&type=video&maxResults=50"
     );
-    console.log(videos);
 
-    setHomePageData(videos);
+    if (!data.items || data.items.length === 0) return [];
+
+    // Step 2: extract video IDs & unique channel IDs
+    const videoIds = data.items.map((i) => i.id.videoId).join(",");
+    const channelIds = [
+      ...new Set(data.items.map((i) => i.snippet.channelId)),
+    ].join(",");
+
+    // Step 3: get video details (views, duration, etc.)
+    const videoData = await fetchData(
+      `videos?part=snippet,statistics,contentDetails&id=${videoIds}`
+    );
+
+    // Step 4: get channel details (avatars, subs)
+    const channelData = await fetchData(
+      `channels?part=snippet,statistics&id=${channelIds}`
+    );
+
+    // Step 5: map channels by ID for quick lookup
+    const channelMap = {};
+    channelData.items.forEach((ch) => {
+      channelMap[ch.id] = {
+        channelName: ch.snippet.title,
+        channelAvatar: ch.snippet.thumbnails.high.url,
+        subscribers: ch.statistics.subscriberCount,
+      };
+    });
+
+    // Step 6: merge video + channel data
+    const finalResults = videoData.items.map((video) => {
+      const ch = channelMap[video.snippet.channelId] || {};
+      return {
+        videoId: video.id,
+        title: video.snippet.title,
+        description: video.snippet.description,
+        thumbnail: video.snippet.thumbnails.high.url,
+        views: video.statistics.viewCount,
+        duration: video.contentDetails.duration, // ISO 8601 (e.g., "PT10M15S")
+        publishedAt: video.snippet.publishedAt,
+        channelId: video.snippet.channelId,
+        channelName: ch.channelName,
+        channelAvatar: ch.channelAvatar,
+        subscribers: ch.subscribers,
+      };
+    });
+
+    setHomePageData(finalResults);
   };
 
   useEffect(() => {
-    // fetchHomepageData();
+    fetchHomepageData();
   }, []);
   return (
     <div
@@ -59,16 +104,18 @@ export default function Home() {
       <CategoryScroll />
       <div className="flex-1 z-0 px-5 mt-20   grid grid-cols-[repeat(auto-fill,minmax(1fr,450px))] sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(350px,1fr))] place-content-center gap-5">
         {homePageData?.map((data) => {
+          console.log(data);
+
           return (
-            <motion.div className="h-fit" key={data.video_id}>
+            <motion.div className="h-fit" key={data.videoId}>
               <Thumbnail
-                videoId={data?.video_id}
-                thumbnail={data?.thumbnails[0]?.url}
+                videoId={data?.videoId}
+                thumbnail={data?.thumbnail}
                 title={data?.title}
-                author={data?.author}
-                veiws={data.number_of_views}
-                publish_time={data.published_time}
-                length={data.video_length}
+                author={data?.channelName}
+                veiws={data.views}
+                publish_time={data.publishedAt}
+                channelAvatar={data?.channelAvatar}
               />
             </motion.div>
           );

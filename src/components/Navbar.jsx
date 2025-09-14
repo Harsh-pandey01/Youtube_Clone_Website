@@ -9,7 +9,7 @@ export default function Navbar() {
   const { setIsSidebarOpen } = useContext(SidebarContext);
 
   return (
-    <div className="w-full fixed top-0 left-0 bg-white px-5 flex z-100 items-center justify-between">
+    <div className="w-full fixed top-0 left-0 py-2 bg-white px-5 flex z-100 items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="hover:bg-black/5 transition duration-200 rounded-full p-2">
           <AiOutlineMenu
